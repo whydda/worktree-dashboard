@@ -52,7 +52,7 @@ struct MenuBarView: View {
             // Footer
             footerView
         }
-        .frame(width: 360)
+        .frame(minWidth: 320, maxWidth: .infinity, minHeight: 400, maxHeight: .infinity)
         .sheet(isPresented: $showSettings) {
             SettingsView(monitor: monitor)
         }
@@ -75,7 +75,7 @@ struct MenuBarView: View {
                 }
             }
         }
-        .frame(maxHeight: 400)
+        .frame(maxHeight: .infinity)
     }
 
     private var emptyStateView: some View {

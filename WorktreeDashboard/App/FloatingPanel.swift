@@ -8,8 +8,8 @@ final class FloatingPanel: NSPanel {
 
     init(contentView: NSView) {
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 500),
-            styleMask: [.titled, .closable, .fullSizeContentView, .nonactivatingPanel],
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 700),
+            styleMask: [.titled, .closable, .resizable, .fullSizeContentView, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
@@ -21,8 +21,10 @@ final class FloatingPanel: NSPanel {
         self.level = .floating
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         self.isReleasedWhenClosed = false
-        self.hidesOnDeactivate = false  // 핵심: 포커스 잃어도 안 숨김
+        self.hidesOnDeactivate = false
         self.backgroundColor = .windowBackgroundColor
+        self.minSize = NSSize(width: 320, height: 400)
+        self.maxSize = NSSize(width: 600, height: 1200)
     }
 
     func toggleVisibility(near statusItemButton: NSStatusBarButton?) {
