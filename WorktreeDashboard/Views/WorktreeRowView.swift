@@ -45,17 +45,19 @@ struct WorktreeRowView: View {
                 .background(statusColor.opacity(0.15))
                 .foregroundColor(statusColor)
                 .clipShape(Capsule())
+
+            // Delete button
+            Button(action: { onDelete(item) }) {
+                Image(systemName: "trash")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.borderless)
+            .help("Delete Worktree")
         }
         .padding(.vertical, 4)
         .padding(.horizontal, 8)
         .contentShape(Rectangle())
-        .contextMenu {
-            Button(role: .destructive) {
-                onDelete(item)
-            } label: {
-                Label("Delete Worktree...", systemImage: "trash")
-            }
-        }
     }
 
     private var statusColor: Color {

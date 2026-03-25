@@ -7,6 +7,7 @@ struct MenuBarView: View {
     @State private var deleteRemoteBranch = false
     @State private var showDeleteConfirm = false
     @State private var deleteError: String?
+    @State private var showQuitConfirm = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -72,6 +73,14 @@ struct MenuBarView: View {
             VStack {
                 Text("Are you sure you want to delete this worktree?\n\nBranch: \(item.branch)\nPath: \(item.relativePath)\n\nThis will remove the worktree folder and the local branch.")
             }
+        }
+        .alert("Quit Worktree Dashboard?", isPresented: $showQuitConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Quit", role: .destructive) {
+                NSApplication.shared.terminate(nil)
+            }
+        } message: {
+            Text("Are you sure you want to quit Worktree Dashboard?")
         }
         .alert("Error", isPresented: .init(
             get: { deleteError != nil },
@@ -162,7 +171,7 @@ struct MenuBarView: View {
             Divider()
                 .frame(height: 10)
 
-            Button(action: { NSApplication.shared.terminate(nil) }) {
+            Button(action: { showQuitConfirm = true }) {
                 Image(systemName: "power")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary)
