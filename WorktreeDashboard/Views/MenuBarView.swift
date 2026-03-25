@@ -158,6 +158,17 @@ struct MenuBarView: View {
             Text("\(monitor.worktrees.count) worktrees")
                 .font(.system(size: 10))
                 .foregroundColor(.secondary)
+
+            Divider()
+                .frame(height: 10)
+
+            Button(action: { NSApplication.shared.terminate(nil) }) {
+                Image(systemName: "power")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+            }
+            .buttonStyle(.borderless)
+            .help("Quit")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
