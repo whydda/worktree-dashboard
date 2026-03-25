@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 @main
 struct WorktreeDashboardApp: App {
@@ -8,21 +9,35 @@ struct WorktreeDashboardApp: App {
         MenuBarExtra {
             MenuBarView(monitor: monitor)
         } label: {
-            Label("Worktrees", systemImage: menuBarIcon)
+            if let icon = loadMenuBarIcon() {
+                Image(nsImage: icon)
+            } else {
+                Label("Worktrees", systemImage: "arrow.triangle.branch")
+            }
         }
         .menuBarExtraStyle(.window)
         .defaultSize(width: 360, height: 480)
     }
 
-    private var menuBarIcon: String {
-        if monitor.staleCount > 0 {
-            return "exclamationmark.triangle"
+    private func loadMenuBarIcon() -> NSImage? {
+        // Find the icon in the bundle or relative to the executable
+        let candidates = [
+            Bundle.main.path(forResource: "MenuBarIcon", ofType: "png"),
+            Bundle.main.resourcePath.map { "\($0)/MenuBarIcon.png" },
+            Bundle.main.executablePath.map { (($0 as NSString).deletingLastPathComponent as NSString).appendingPathComponent("../Resources/MenuBarIcon.png") },
+        ]
+
+        for candidate in candidates {
+            guard let path = candidate, let image = NSImage(contentsOfFile: path) else { continue }
+            image.isTemplate = true  // macOS가 자동으로 밝기 조절
+            image.size = NSSize(width: 18, height: 18)
+            return image
         }
-        return "arrow.triangle.branch"
+
+        return nil
     }
 
     init() {
-        // Monitor starts when app launches
         DispatchQueue.main.async { [self] in
             monitor.startMonitoring()
         }
