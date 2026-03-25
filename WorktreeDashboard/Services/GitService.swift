@@ -1,5 +1,17 @@
 import Foundation
 
+enum WorktreeRemoveError: Error, LocalizedError {
+    case isMainWorktree
+    case mainRepoNotFound
+
+    var errorDescription: String? {
+        switch self {
+        case .isMainWorktree: return "Cannot remove the main worktree"
+        case .mainRepoNotFound: return "Could not find the main repository"
+        }
+    }
+}
+
 actor GitService {
     static let shared = GitService()
     private let staleDaysThreshold = 7
@@ -167,6 +179,53 @@ actor GitService {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
         return formatter.date(from: trimmed)
+    }
+
+    /// Worktree 삭제: git worktree remove + 로컬 브랜치 삭제 + 리모트 브랜치 삭제(옵션)
+    func removeWorktree(item: WorktreeItem, deleteRemoteBranch: Bool) async -> Result<Void, WorktreeRemoveError> {
+        guard !item.isMainWorktree else {
+            return .failure(.isMainWorktree)
+        }
+
+        let repoPath = findMainRepoFromWorktree(worktreePath: item.path)
+        guard let mainRepo = repoPath else {
+            return .failure(.mainRepoNotFound)
+        }
+
+        // 1. git worktree remove --force <path>
+        let _ = runGit(["worktree", "remove", "--force", item.path], at: mainRepo)
+        let fm = FileManager.default
+        if fm.fileExists(atPath: item.path) {
+            // Fallback: 직접 디렉토리 삭제
+            try? fm.removeItem(atPath: item.path)
+        }
+
+        // 2. 로컬 브랜치 삭제
+        let _ = runGit(["branch", "-D", item.branch], at: mainRepo)
+
+        // 3. 리모트 브랜치 삭제 (옵션)
+        if deleteRemoteBranch {
+            let _ = runGit(["push", "origin", "--delete", item.branch], at: mainRepo)
+        }
+
+        // 4. worktree prune (정리)
+        let _ = runGit(["worktree", "prune"], at: mainRepo)
+
+        return .success(())
+    }
+
+    private func findMainRepoFromWorktree(worktreePath: String) -> String? {
+        let gitFile = (worktreePath as NSString).appendingPathComponent(".git")
+        guard let content = try? String(contentsOfFile: gitFile, encoding: .utf8),
+              content.hasPrefix("gitdir:") else {
+            return nil
+        }
+        let gitdir = content.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "gitdir: ", with: "")
+        let mainGitDir = (gitdir as NSString)
+            .deletingLastPathComponent
+            .replacingOccurrences(of: "/worktrees", with: "")
+        return (mainGitDir as NSString).deletingLastPathComponent
     }
 
     private func runGit(_ args: [String], at path: String) -> String {

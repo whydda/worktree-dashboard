@@ -52,4 +52,12 @@ final class WorktreeMonitor: ObservableObject {
         lastRefreshed = Date()
         isLoading = false
     }
+
+    func removeWorktree(_ item: WorktreeItem, deleteRemoteBranch: Bool) async -> Result<Void, WorktreeRemoveError> {
+        let result = await GitService.shared.removeWorktree(item: item, deleteRemoteBranch: deleteRemoteBranch)
+        if case .success = result {
+            await refresh()
+        }
+        return result
+    }
 }

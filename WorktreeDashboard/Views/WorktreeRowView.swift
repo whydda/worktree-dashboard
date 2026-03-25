@@ -2,6 +2,7 @@ import SwiftUI
 
 struct WorktreeRowView: View {
     let item: WorktreeItem
+    let onDelete: (WorktreeItem) -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -48,6 +49,13 @@ struct WorktreeRowView: View {
         .padding(.vertical, 4)
         .padding(.horizontal, 8)
         .contentShape(Rectangle())
+        .contextMenu {
+            Button(role: .destructive) {
+                onDelete(item)
+            } label: {
+                Label("Delete Worktree...", systemImage: "trash")
+            }
+        }
     }
 
     private var statusColor: Color {

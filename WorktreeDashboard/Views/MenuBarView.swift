@@ -3,6 +3,10 @@ import SwiftUI
 struct MenuBarView: View {
     @ObservedObject var monitor: WorktreeMonitor
     @State private var showSettings = false
+    @State private var itemToDelete: WorktreeItem?
+    @State private var deleteRemoteBranch = false
+    @State private var showDeleteConfirm = false
+    @State private var deleteError: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -56,6 +60,27 @@ struct MenuBarView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView(monitor: monitor)
         }
+        .alert("Delete Worktree", isPresented: $showDeleteConfirm, presenting: itemToDelete) { item in
+            Button("Cancel", role: .cancel) {
+                itemToDelete = nil
+                deleteRemoteBranch = false
+            }
+            Button("Delete", role: .destructive) {
+                Task { await performDelete(item) }
+            }
+        } message: { item in
+            VStack {
+                Text("Are you sure you want to delete this worktree?\n\nBranch: \(item.branch)\nPath: \(item.relativePath)\n\nThis will remove the worktree folder and the local branch.")
+            }
+        }
+        .alert("Error", isPresented: .init(
+            get: { deleteError != nil },
+            set: { if !$0 { deleteError = nil } }
+        )) {
+            Button("OK") { deleteError = nil }
+        } message: {
+            Text(deleteError ?? "")
+        }
     }
 
     // MARK: - Subviews
@@ -64,7 +89,10 @@ struct MenuBarView: View {
         ScrollView {
             LazyVStack(spacing: 0) {
                 ForEach(monitor.worktrees) { item in
-                    WorktreeRowView(item: item)
+                    WorktreeRowView(item: item) { selectedItem in
+                        itemToDelete = selectedItem
+                        showDeleteConfirm = true
+                    }
 
                     if item.id != monitor.worktrees.last?.id {
                         Divider()
@@ -133,5 +161,18 @@ struct MenuBarView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+
+    // MARK: - Actions
+
+    private func performDelete(_ item: WorktreeItem) async {
+        let result = await monitor.removeWorktree(item, deleteRemoteBranch: deleteRemoteBranch)
+        switch result {
+        case .success:
+            itemToDelete = nil
+            deleteRemoteBranch = false
+        case .failure(let error):
+            deleteError = error.localizedDescription
+        }
     }
 }
